@@ -6,30 +6,94 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from 'components/ui/separator';
 import { StarIcon } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { ScrollView, View } from 'react-native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import { Announcement, AnnouncementTag, AnnouncementTitle } from '@/components/ui/announcement';
+import { Marquee } from '@animatereactnative/marquee';
+const logos = [
+  {
+    name: 'GitHub',
+    icon: (props: Omit<React.ComponentProps<typeof AntDesign>, 'name'>) => (
+      <AntDesign name="github" {...props} />
+    ),
+    url: 'https://github.com',
+  },
+  {
+    name: 'Facebook',
+    icon: (props: Omit<React.ComponentProps<typeof FontAwesome>, 'name'>) => (
+      <FontAwesome name="facebook" {...props} />
+    ),
+    url: 'https://facebook.com',
+  },
+  {
+    name: 'Google',
+    icon: (props: Omit<React.ComponentProps<typeof FontAwesome>, 'name'>) => (
+      <FontAwesome name="google" {...props} />
+    ),
+    url: 'https://google.com',
+  },
+  {
+    name: 'X',
+    icon: (props: Omit<React.ComponentProps<typeof MaterialCommunityIcons>, 'name'>) => (
+      <MaterialCommunityIcons name="twitter" {...props} />
+    ),
+    url: 'https://x.com',
+  },
+  {
+    name: 'Apple',
+    icon: (props: Omit<React.ComponentProps<typeof FontAwesome>, 'name'>) => (
+      <FontAwesome name="apple" {...props} />
+    ),
+    url: 'https://apple.com',
+  },
+  {
+    name: 'Instagram',
+    icon: (props: Omit<React.ComponentProps<typeof FontAwesome>, 'name'>) => (
+      <FontAwesome name="instagram" {...props} />
+    ),
+    url: 'https://instagram.com',
+  }
+];
 
 export default function OnboardingHero() {
   const router = useRouter();
   return (
-    <Card className="items-center p-8 mt-10 mx-4 bg-gradient-to-br from-zinc-50 to-zinc-200 shadow-xl rounded-2xl border border-zinc-300">
-      <Avatar className="w-24 h-24 mb-4 border-4 border-zinc-800 shadow-md bg-zinc-100" alt="Avatar do usuário">
-        <AvatarImage src={require('@/assets/images/react-native-reusables-light.png')} style={{ tintColor: '#222' }} />
-        <AvatarFallback>
-          <Text className="text-xl font-bold text-zinc-800">IA</Text>
-        </AvatarFallback>
-      </Avatar>
-      <Icon as={StarIcon} className="size-8 text-zinc-900 mb-2 opacity-60" />
-      <Text className="text-3xl font-extrabold text-center mb-2 text-zinc-900 tracking-tight">Bem-vindo ao Invest App</Text>
-      <Text className="text-base text-center text-zinc-700 mb-4">
-        <Text className="font-bold text-zinc-900">Minimalismo, tecnologia e segurança.</Text>{"\n"}
-        Invista com praticidade e estilo. Seu futuro financeiro, agora com design moderno e sofisticado.
-      </Text>
-      <Separator className="my-6 bg-zinc-300" />
-      <Button className="w-full bg-zinc-900 active:bg-zinc-800 rounded-xl shadow-md" onPress={() => {
-        router.push('/login');
-      }}>
-        <Text className="text-lg font-bold text-white">Começar</Text>
-      </Button>
-      <Text className="text-xs text-zinc-500 mt-4 text-center">O novo preto é investir com inteligência.</Text>
-    </Card>
+    <View className="flex flex-col gap-16 px-8 py-24 text-center">
+      <View className="flex flex-col items-center justify-center gap-8">
+        <Text>
+          <Announcement className="mb-0 px-5" themed>
+            <AnnouncementTag>Novo!</AnnouncementTag>
+            <AnnouncementTitle>Controle total das suas finanças</AnnouncementTitle>
+          </Announcement>
+        </Text>
+        <Text className="mb-0 text-balance text-6xl font-medium md:text-7xl xl:text-[5.25rem]">
+          O melhor modo de investir seu dinheiro 
+        </Text>
+        <Text className="mb-0 mt-0 text-balance text-lg text-muted-foreground">
+          Bem-vindo ao Investae! Acompanhe suas informações financeiras, preencha formulários personalizados e tenha controle total das suas finanças em um só lugar.
+        </Text>
+        <View className="flex-row items-center gap-2">
+          <Button onPress={() => router.push('/login')} size="lg">
+            <Text>Entrar Agora</Text>
+          </Button>
+          <Button variant="outline" onPress={() => router.push('/register')}>
+            <Text className="no-underline">Criar conta</Text>
+          </Button>
+        </View>
+      </View>
+      <View className="pb-18 flex flex-col items-center justify-center gap-8 rounded-xl bg-secondary py-8 w-full">
+        <Marquee spacing={0} speed={0.4}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {logos.map((logo) => (
+              <View key={logo.name} style={{ marginHorizontal: 20 }}>
+                {logo.icon({ size: 32, color: '#333' })}
+              </View>
+            ))}
+          </View>
+        </Marquee>
+      </View>
+    </View>
   );
 }
