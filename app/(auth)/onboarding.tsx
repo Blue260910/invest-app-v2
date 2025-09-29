@@ -4,29 +4,8 @@ import { Button } from 'components/ui/button';
 import { Text } from 'components/ui/text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from 'components/ui/separator';
-import { THEME } from '@/lib/theme';
-import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { StarIcon } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
-import { toast } from 'sonner-native';
-
-const SCREEN_OPTIONS = {
-  light: {
-    title: 'React Native Reusables',
-    headerTransparent: true,
-    headerShadowVisible: true,
-    headerStyle: { backgroundColor: THEME.light.background },
-    headerRight: () => <ThemeToggle />,
-  },
-  dark: {
-    title: 'React Native Reusables',
-    headerTransparent: true,
-    headerShadowVisible: true,
-    headerStyle: { backgroundColor: THEME.dark.background },
-    headerRight: () => <ThemeToggle />,
-  },
-};
-
 
 export default function OnboardingHero() {
   const router = useRouter();
@@ -52,24 +31,5 @@ export default function OnboardingHero() {
       </Button>
       <Text className="text-xs text-zinc-500 mt-4 text-center">O novo preto é investir com inteligência.</Text>
     </Card>
-  );
-}
-
-const THEME_ICONS = {
-  light: SunIcon,
-  dark: MoonStarIcon,
-};
-
-function ThemeToggle() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
-
-  return (
-    <Button
-      onPressIn={toggleColorScheme}
-      size="icon"
-      variant="ghost"
-      className="rounded-full web:mx-4">
-      <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
-    </Button>
   );
 }
