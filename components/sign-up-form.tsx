@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
-import React, { useState } from 'react';
-import { Pressable, TextInput, View, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Pressable, TextInput, View, TouchableOpacity, Image, BackHandler } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { UserRound, Contact, Lock, Mail, Pencil, Camera } from 'lucide-react-native';
 import { signUpWithEmail } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { Progress } from "@/components/ui/progress"
+
 
 
 export function SignUpForm() {
@@ -148,8 +150,23 @@ export function SignUpForm() {
     }
   };
 
+  useEffect(() => {
+    const onBackPress = () => {
+      if (step > 1) {
+        setStep((prev) => prev - 1);
+        return true; // impede o comportamento padrão
+      }
+      return false; // permite voltar para tela anterior se estiver no primeiro step
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => subscription.remove();
+  }, [step]);
+
   return (
     <View className="gap-6">
+      <Progress value={(step / 3) * 100} className="h-2 rounded-full" />
       <Card className="border-border/0 shadow-none sm:border-border sm:shadow-sm sm:shadow-black/5">
         <CardHeader>
           <CardTitle className="text-center text-xl sm:text-left">Crie sua conta</CardTitle>
