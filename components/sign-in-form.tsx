@@ -17,6 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginFormData, loginSchema } from '@/lib/validation';
 import { signInWithEmail, biometricRelogin } from '@/lib/auth';
 import { useRouter } from 'expo-router';
+import { toast } from 'sonner-native';
+
 
 export function SignInForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
@@ -61,6 +63,12 @@ export function SignInForm() {
         console.error('Erro ao salvar credenciais para biometria:', e);
       }
     } else {
+      if (result.message === "Invalid login credentials") {
+        result.message = "Email ou senha incorretos.";
+      } else if (result.message === "missing email or phone") {
+        result.message = "Insira seu email.";
+      }
+      toast.error(result.message);
       setError(result.message ?? 'Erro desconhecido');
     }
     setIsLoading(false);
@@ -82,9 +90,9 @@ export function SignInForm() {
     <View className="gap-6">
       <Card className="border-border/0 sm:border-border shadow-none sm:shadow-sm sm:shadow-black/5">
         <CardHeader>
-          <CardTitle className="text-center text-xl sm:text-left">Sign in to your app</CardTitle>
+          <CardTitle className="text-center text-xl sm:text-left">Entrar no seu app</CardTitle>
           <CardDescription className="text-center sm:text-left">
-            Welcome back! Please sign in to continue
+            Bem vindo de volta! Por favor, insira seus dados.
           </CardDescription>
         </CardHeader>
         <CardContent className="gap-6">
@@ -130,10 +138,7 @@ export function SignInForm() {
             </View>
               <Button className="w-full" onPress={onSubmit} disabled={isLoading}>
                 <Text>{isLoading ? 'Entrando...' : 'Continuar'}</Text>
-              </Button>
-              {error && (
-                <Text className="text-center text-red-500 text-sm mt-2">{error}</Text>
-              )}
+              </Button>                
           </View>
           <Text className="text-center text-sm">
               Não tem uma conta?{' '}

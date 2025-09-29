@@ -8,6 +8,7 @@ import { THEME } from '@/lib/theme';
 import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
+import { toast } from 'sonner-native';
 
 const SCREEN_OPTIONS = {
   light: {
@@ -44,7 +45,7 @@ export default function OnboardingHero() {
         Invista com praticidade e estilo. Seu futuro financeiro, agora com design moderno e sofisticado.
       </Text>
       <Separator className="my-6 bg-zinc-300" />
-      <Button className="w-full bg-zinc-900 active:bg-zinc-800 py-3 rounded-xl shadow-md" onPress={() => {
+      <Button className="w-full bg-zinc-900 active:bg-zinc-800 rounded-xl shadow-md" onPress={() => {
         router.push('/login');
       }}>
         <Text className="text-lg font-bold text-white">Começar</Text>
