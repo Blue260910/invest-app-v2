@@ -29,6 +29,7 @@ import { useColorScheme } from 'nativewind';
 import ProfileScreen from '@/app/(app)/profile';
 import SummaryScreen from '@/app/(app)/summary';
 import MultiStepForm from '@/app/(app)/Form';
+import ChatScreen from '@/app/(app)/chat';
 // import FormPersonal from '@/app/(app)/form/personal';
 // import FormFinancial from '@/app/(app)/form/financial';
 // import Forminvestor from '@/app/(app)/form/investor';
@@ -97,6 +98,14 @@ const AppLayout = () => {
           component={MultiStepForm}
           options={{
             drawerLabel: 'Formulário',
+            drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
+          }}
+        />
+        <Drawer.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={{
+            drawerLabel: 'Chat',
             drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
           }}
         />

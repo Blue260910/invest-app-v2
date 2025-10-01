@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel, ChatSession } from "@google/generative-ai";
 
-const GEMINI_API_KEY = "AIzaSyCa_XDr3DfkLgzGwP2r6dFG0c0fKSfgFYE";
+const GEMINI_API_KEY = "AIzaSyAI5jIBs2aPgFOwXoSKtrWqXsY1EE67bS4";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const GENERATION_CONFIG = {
@@ -134,7 +134,7 @@ export async function startChat(usuario: Usuario, mensagemInicial?: string) {
   const systemInstruction = gerarSystemInstruction(usuario);
 
 const model: GenerativeModel = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash", // ou "gemini-1.5-pro"
+  model: "gemini-2.5-flash-lite", // ou "gemini-1.5-pro"
   generationConfig: GENERATION_CONFIG,
   systemInstruction,
 });
@@ -190,6 +190,8 @@ export async function sendMessage(userId: string, mensagem: string) {
     throw new Error("Sessão de chat não encontrada para este usuário.");
   }
 
+  console.log("Enviando mensagem para Gemini:", mensagem);
+  
   const result = await chat.sendMessage(mensagem);
   const respostaTexto = result.response.text();
 
