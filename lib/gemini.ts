@@ -191,7 +191,22 @@ export async function sendMessage(userId: string, mensagem: string) {
   }
 
   console.log("Enviando mensagem para Gemini:", mensagem);
-  
+
+  if (mensagem === "TesteGrafico") {
+    return [
+      {
+        tipo: "dado_financeiro",
+        titulo: "Petrobras",
+        codigo: "PETR4.SA",
+        descricao: "Preço atual da ação PETR4.",
+        valor: "R$ 36,45",
+        variacao_dia: "+1.12%",
+        fonte: "B3",
+        data: "2025-06-11"
+      }
+    ];
+  }
+
   const result = await chat.sendMessage(mensagem);
   const respostaTexto = result.response.text();
 
@@ -242,6 +257,20 @@ export async function sendMessage(userId: string, mensagem: string) {
       }
     }
     return respostaGemini;
+  }
+
+  async function fetchDataHistoricChart(symbol: string) {
+    const baseUrl = `https://oziwendirtmqquvqkree.supabase.co/functions/v1/fetch-stock-history`;
+    const response = await fetch(baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aXdlbmRpcnRtcXF1dnFrcmVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwOTA4MzksImV4cCI6MjA2MjY2NjgzOX0.PjysWhT8Y32PldsP3OsAefhiKfxjF8naRDhrrSddRVQ'
+      },
+      body: JSON.stringify({ symbol })
+    });
+    const data = await response.json();
+    return data;
   }
 
   const respostaGemini = extrairJson(respostaTexto);

@@ -6,10 +6,14 @@ import { ChatInput } from '@/components/ChatInput';
 import { useFormContext } from '../../contexts/FormContext';
 import { startChat, sendMessage, Usuario } from '@/lib/gemini';
 import Markdown from 'react-native-markdown-display';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text as UIText } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CartesianChart, Line, useChartPressState } from "victory-native";
+import { useFont, Circle, Text as SkiaText } from '@shopify/react-native-skia';
+import type { SharedValue } from "react-native-reanimated";
+
 
 
 import { THEME } from '@/lib/theme';
@@ -20,6 +24,8 @@ interface Message {
 	sender: 'user' | 'bot';
 }
 
+
+
 const ChatScreen: React.FC = () => {
     const [messages, setMessages] = useState<any[]>([
         {
@@ -27,6 +33,7 @@ const ChatScreen: React.FC = () => {
         text: 'Olá! Sou seu assistente financeiro. Como posso te ajudar hoje?'
         }
     ]); 
+
 	const [loading, setLoading] = useState(false);
 	const flatListRef = useRef<FlatList>(null);
 	const insets = useSafeAreaInsets();
@@ -34,13 +41,50 @@ const ChatScreen: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [chatStarted, setChatStarted] = useState(false);
 
-    // Card para exibir dados financeiros
+    const font = useFont(require('../../assets/fonts/Roboto.ttf'), 14); // 14 é o tamanho da fonte
 
+
+        // Card para exibir dados financeiros
+
+        // MOCK: dados reais de candles para o gráfico
+        const DATAGRAFICOTESTE = [
+            { day: 0, close: 31.53, date: "09/16" },
+            { day: 1, close: 31.72, date: "09/17" },
+            { day: 2, close: 31.41, date: "09/18" },
+            { day: 3, close: 31.06, date: "09/19" },
+            { day: 4, close: 31.37, date: "09/22" },
+            { day: 5, close: 31.90, date: "09/23" },
+            { day: 6, close: 32.62, date: "09/24" },
+            { day: 7, close: 32.36, date: "09/25" },
+            { day: 8, close: 32.25, date: "09/26" },
+            { day: 9, close: 31.81, date: "09/29" },
+            { day: 10, close: 31.40, date: "10/01" },
+        ];
+
+        
+
+        function ToolTip({ x, y, date, value }: { x: SharedValue<number>; y: SharedValue<number>; date: string; value: number}) {
+        return (
+            <View>
+                <Circle cx={x} cy={y} r={12} color="#fff" opacity={0.9} />
+                <Circle cx={x} cy={y} r={8} color="black" />
+                <SkiaText
+                    x={x}
+                    y={y.value + 24}
+                    font={font!}
+                    color="black"
+                    text={`${date} - ${value}`}
+                />
+            </View>
+        );
+    }
 
         function FinancialDataCard({ data }: { data: any }) {
             // Cores para variação positiva/negativa
             const isPositive = typeof data.variacao_dia === 'string' && data.variacao_dia.trim().startsWith('+');
             const isNegative = typeof data.variacao_dia === 'string' && data.variacao_dia.trim().startsWith('-');
+            const { state, isActive } = useChartPressState<{ x: string; y: Record<"close", number> }>({ x: "", y: { close: 0 } });
+
             return (
                 <Card className="w-4/5">
                     <CardHeader className="flex-row justify-between items-center">
@@ -50,17 +94,34 @@ const ChatScreen: React.FC = () => {
                         </Badge>
                     </CardHeader>
                     <Separator />
+                    <CardContent className="h-40">
+                        <CartesianChart
+                            data={DATAGRAFICOTESTE}
+                            xKey="date" yKeys={["close"]}
+                            chartPressState={state} // 👈 and pass it to our chart.
+                        >
+                            {({ points }) => (
+                                <>
+                                    <Line points={points.close} color="red" strokeWidth={3} />
+                                    {isActive ? (
+                                        <ToolTip x={state.x.position} y={state.y.close.position} date={state.x.value.value} value={state.y.close.value.value} />
+                                    ) : null}
+                                </>
+                            )}
+                        </CartesianChart>
+                    </CardContent>
                     <CardFooter className="flex-row items-end justify-between">
                         <View>
                             <UIText className="text-2xl font-bold leading-tight">{data.valor}</UIText>
                             <Badge variant="outline" className="mt-1 px-2 py-1">
-                                <UIText >{data.variacao_dia ?? '--'}</UIText>
+                                <UIText >{data.variacao_dia ?? '--'} Hoje</UIText>
                             </Badge>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
                             <UIText className="text-[10px] text-muted-foreground">Fonte: {data.fonte}</UIText>
                             <UIText className="text-[10px] text-muted-foreground">{data.data}</UIText>
                         </View>
+
                     </CardFooter>
                 </Card>
             );
