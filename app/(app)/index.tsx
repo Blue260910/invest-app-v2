@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { Button } from 'components/ui/button';
 import { View, useColorScheme } from 'react-native';
 import { Brain } from 'lucide-react-native';
@@ -7,17 +7,29 @@ import { Input } from '@/components/ui/input';
 import { Separator } from 'components/ui/separator';
 import { THEME } from '@/lib/theme';
 import { useFormContext } from '../../contexts/FormContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useMensagemInicial } from '../../contexts/MensagemInicialContext';
 
 
 export default function Dashboard() {
-  const router = useRouter();
+  const navigation = useNavigation();
   const colorScheme = useColorScheme();
   const theme = THEME[colorScheme ?? 'light'];
   const { recuperarDados } = useFormContext();
+  const { setMensagemInicial } = useMensagemInicial();
+  const [input, setInput] = useState('');
+
   useEffect(() => {
     if (recuperarDados) recuperarDados();
   }, []);
+
+  function handleSend() {
+    if (!input.trim()) return;
+    setMensagemInicial(input);
+    setInput('');
+  navigation.navigate('Chat' as never);
+  }
+
   return (
     <View className="p-4">
       <SectionCards />
@@ -33,10 +45,15 @@ export default function Dashboard() {
           placeholder="Em que posso ajudar?"
           className="flex-1 px-2 border-none"
           style={{ color: theme.cardForeground }}
+          value={input}
+          onChangeText={setInput}
+          onSubmitEditing={handleSend}
+          returnKeyType="send"
         />
         <Button
           className="ml-2 p-2 rounded-full"
           style={{ backgroundColor: theme.primary }}
+          onPress={handleSend}
         >
           <Brain color={theme.primaryForeground} size={22} style={{ transform: [{ rotate: '360deg' }] }} />
         </Button>

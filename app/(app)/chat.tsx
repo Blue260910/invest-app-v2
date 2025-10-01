@@ -1,6 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Keyboard } from 'react-native';
+import { useMensagemInicial } from '../../contexts/MensagemInicialContext';
+import { View, Text, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, useColorScheme  } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatInput } from '@/components/ChatInput';
 import { useFormContext } from '../../contexts/FormContext';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { useFont, Circle, Text as SkiaText } from '@shopify/react-native-skia';
+
 import type { SharedValue } from "react-native-reanimated";
 
 
@@ -27,12 +28,21 @@ interface Message {
 
 
 const ChatScreen: React.FC = () => {
+    const { mensagemInicial, setMensagemInicial } = useMensagemInicial();
     const [messages, setMessages] = useState<any[]>([
         {
         userId: 'bot',
         text: 'Olá! Sou seu assistente financeiro. Como posso te ajudar hoje?'
         }
-    ]); 
+    ]);
+    // Sempre que mensagemInicial mudar e não estiver vazia, envie automaticamente
+    useEffect(() => {
+        if (mensagemInicial && mensagemInicial.trim()) {
+            handleSend(mensagemInicial);
+            setMensagemInicial('');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mensagemInicial]);
 
 	const [loading, setLoading] = useState(false);
 	const flatListRef = useRef<FlatList>(null);
@@ -40,6 +50,8 @@ const ChatScreen: React.FC = () => {
     const { formState, recuperarDados } = useFormContext();
     const [userId, setUserId] = useState<string | null>(null);
     const [chatStarted, setChatStarted] = useState(false);
+    const colorScheme = useColorScheme();
+    const theme = THEME[colorScheme ?? 'light'];
 
     const font = useFont(require('../../assets/fonts/Roboto.ttf'), 14); // 14 é o tamanho da fonte
 
@@ -63,30 +75,98 @@ const ChatScreen: React.FC = () => {
 
         
 
-        function ToolTip({ x, y, date, value }: { x: SharedValue<number>; y: SharedValue<number>; date: string; value: number}) {
-        return (
-            <View>
-                <Circle cx={x} cy={y} r={12} color="#fff" opacity={0.9} />
-                <Circle cx={x} cy={y} r={8} color="black" />
-                <SkiaText
-                    x={x}
-                    y={y.value + 24}
-                    font={font!}
-                    color="black"
-                    text={`${date} - ${value}`}
-                />
-            </View>
-        );
-    }
+
+        function ToolTip({ x, y, date, value }: { x: number; y: number; date: string; value: number}) {
+            return (
+                <View>
+                    <Circle cx={x} cy={y} r={8} color={"#262626"} />
+                </View>
+            );        }
 
         function FinancialDataCard({ data }: { data: any }) {
             // Cores para variação positiva/negativa
             const isPositive = typeof data.variacao_dia === 'string' && data.variacao_dia.trim().startsWith('+');
             const isNegative = typeof data.variacao_dia === 'string' && data.variacao_dia.trim().startsWith('-');
-            const { state, isActive } = useChartPressState<{ x: string; y: Record<"close", number> }>({ x: "", y: { close: 0 } });
+            // Corrigir tipagem para aceitar xKey/yKeys string
+            const { state, isActive } = useChartPressState<{ x: string; y: Record<string, number> }>({ x: '', y: { close: 0 } });
 
+            // Estado para manter o tooltip fixo
+            const [fixedTooltip, setFixedTooltip] = useState<null | {
+                x: number;
+                y: number;
+                date: string;
+                value: number;
+            }>(null);
+
+            // Quando o usuário solta o dedo, fixa o tooltip
+            useEffect(() => {
+                if (!isActive && !fixedTooltip && !isNaN(state.y.close.value.value)) {
+                    // Não faz nada se não tem valor
+                    return;
+                }
+                if (!isActive && isNaN(state.y.close.value.value)) {
+                    // Se não tem valor, não fixa
+                    return;
+                }
+                if (!isActive && !fixedTooltip && !isNaN(state.y.close.value.value)) {
+                    setFixedTooltip({
+                        x: state.x.position.value,
+                        y: state.y.close.position.value,
+                        date: state.x.value.value,
+                        value: state.y.close.value.value,
+                    });
+                }
+            }, [isActive]);
+
+            // Se o usuário pressionar novamente, atualiza o tooltip
+            useEffect(() => {
+                if (isActive && !isNaN(state.y.close.value.value)) {
+                    setFixedTooltip({
+                        x: state.x.position.value,
+                        y: state.y.close.position.value,
+                        date: state.x.value.value,
+                        value: state.y.close.value.value,
+                    });
+                }
+            }, [isActive, state.x.position.value, state.y.close.position.value, state.x.value.value, state.y.close.value.value]);
+
+            // Função para limpar o tooltip fixo
+            const clearTooltip = () => setFixedTooltip(null);
+
+
+            // Novo: usar dados históricos reais se disponíveis (ajuste para formato { historico: { candles: [...] } })
+            let candles: any[] | null = null;
+            let historicoErro = false;
+            if (data.historico && Array.isArray(data.historico)) {
+                // Caso antigo: historico já é array
+                candles = data.historico;
+            } else if (data.historico && typeof data.historico === 'object' && data.historico !== null) {
+                if (Array.isArray(data.historico.candles)) {
+                    candles = data.historico.candles;
+                } else if (data.historico.error) {
+                    historicoErro = true;
+                }
+            }
+
+            // Normaliza para o formato esperado pelo gráfico
+            let historico = candles && candles.length > 0
+                ? candles.map((item: any) => ({
+                    date: item.date || item.data || '',
+                    close: typeof item.close === 'number' ? item.close : Number(item.close)
+                }))
+                : null;
+
+            // Fallback para dados mock se não houver histórico real
+            type GraficoData = { date: string; close: number }[];
+            // Só usa o mock se NÃO houver candles válidos E NÃO houver erro
+            const graficoData: GraficoData = (!historicoErro && historico && historico.length > 0)
+                ? historico
+                : (!historicoErro ? DATAGRAFICOTESTE : []);
+
+            // Define a cor da linha: preta no claro, branca no escuro
+            const lineColor = colorScheme === 'dark' ? '#fff' : '#000';
             return (
-                <Card className="w-4/5">
+                <Card className="w-4/5" style={{ backgroundColor: theme.primaryForeground }}>
                     <CardHeader className="flex-row justify-between items-center">
                         <CardTitle style={{ marginBottom: 0, flexShrink: 1 }}>{data.titulo}</CardTitle>
                         <Badge variant="secondary" className="ml-2 px-2 py-1">
@@ -94,22 +174,60 @@ const ChatScreen: React.FC = () => {
                         </Badge>
                     </CardHeader>
                     <Separator />
-                    <CardContent className="h-40">
-                        <CartesianChart
-                            data={DATAGRAFICOTESTE}
-                            xKey="date" yKeys={["close"]}
-                            chartPressState={state} // 👈 and pass it to our chart.
-                        >
-                            {({ points }) => (
-                                <>
-                                    <Line points={points.close} color="red" strokeWidth={3} />
-                                    {isActive ? (
-                                        <ToolTip x={state.x.position} y={state.y.close.position} date={state.x.value.value} value={state.y.close.value.value} />
-                                    ) : null}
-                                </>
-                            )}
-                        </CartesianChart>
-                    </CardContent>
+                    {/* Só mostra o gráfico se não houver erro e houver candles reais OU mock */}
+                    {(!historicoErro && graficoData.length > 0) && (
+                        <View style={{ position: "relative" }} className='height-50'>
+                            <View style={{ position: "absolute", bottom: 5, right: 0, zIndex: 1 }}>
+                                <Badge variant="secondary">
+                                    <UIText>
+                                        {(isActive || fixedTooltip)
+                                            ? `${
+                                                isActive
+                                                    ? `${state.x.value.value}  |  R$: ${!isNaN(state.y.close.value.value) ? state.y.close.value.value.toFixed(2) : ''}`
+                                                    : `${fixedTooltip?.date}  |  R$: ${fixedTooltip?.value?.toFixed(2)}`
+                                            }`
+                                            : "Variação dos últimos 15 dias"}
+                                    </UIText>
+                                    {fixedTooltip && (
+                                        <UIText onPress={clearTooltip} style={{ color: 'red', marginLeft: 8 }}>✕</UIText>
+                                    )}
+                                </Badge>
+                            </View>
+                            <CardContent className="h-40 mb-5">
+                                <View
+                                    style={{ flex: 1 }}
+                                    // Ao pressionar fora do gráfico, limpa o tooltip
+                                    onStartShouldSetResponder={() => {
+                                        clearTooltip();
+                                        return false;
+                                    }}
+                                >
+                                    <CartesianChart
+                                        data={graficoData}
+                                        xKey={"date"}
+                                        yKeys={["close"]}
+                                        chartPressState={state as any}
+                                        yAxis={[{ lineColor: "#262626" }]}
+                                    >
+                                        {({ points }: any) => (
+                                            <>
+                                                {points.close && <Line points={points.close} color={lineColor} strokeWidth={3} />}
+                                                {(isActive || fixedTooltip) && (
+                                                    <ToolTip
+                                                        x={isActive ? state.x.position.value : fixedTooltip!.x}
+                                                        y={isActive ? state.y.close.position.value : fixedTooltip!.y}
+                                                        date={isActive ? state.x.value.value : fixedTooltip!.date}
+                                                        value={isActive ? state.y.close.value.value : fixedTooltip!.value}
+                                                    />
+                                                )}
+                                            </>
+                                        )}
+                                    </CartesianChart>
+                                </View>
+                            </CardContent>
+                            <Separator />
+                        </View>
+                    )}
                     <CardFooter className="flex-row items-end justify-between">
                         <View>
                             <UIText className="text-2xl font-bold leading-tight">{data.valor}</UIText>
@@ -130,6 +248,9 @@ const ChatScreen: React.FC = () => {
 
     // Componente para exibir a lista de mensagens (deve ser implementado separadamente)
     const MessageList = ({ messages, userId }: { messages: any[]; userId: string }) => {
+        // Define a cor do fundo da mensagem do bot conforme o tema
+        const botBgColor = colorScheme === 'light' ? 'hsl(0 0% 98%)' : 'hsl(0 0% 9%)';
+        const botTextColor = colorScheme === 'dark' ? '#fff' : '#222';
         return (
             <View style={{ flex: 1 }}>
                 {messages.map((msg, idx) => {
@@ -138,6 +259,7 @@ const ChatScreen: React.FC = () => {
                     if (msg.userId === 'bot' && msg.tipo === 'dado_financeiro') {
                         return (
                             <View key={idx} style={{ alignItems: 'flex-start', marginVertical: 4 }}>
+                                {/* Passa o histórico real se vier junto na mensagem */}
                                 <FinancialDataCard data={msg} />
                             </View>
                         );
@@ -150,13 +272,13 @@ const ChatScreen: React.FC = () => {
                                     borderRadius: 16,
                                     padding: 10,
                                     maxWidth: '90%',
-                                    backgroundColor: isUser ? '#2563eb' : '#f3f4f6', // azul para user, cinza claro para bot
+                                    backgroundColor: isUser ? '#2563eb' : botBgColor, // azul para user, tema para bot
                                     borderWidth: isUser ? 1 : 0,
                                     borderColor: isUser ? '#1d4ed8' : 'transparent',
                                 }}
                             >
                                 {msg.userId === 'bot' ? (
-                                    <Markdown style={{ body: { color: '#222', fontSize: 16 } }}>{msg.text}</Markdown>
+                                    <Markdown style={{ body: { color: botTextColor, fontSize: 16 } }}>{msg.text}</Markdown>
                                 ) : (
                                     <Text style={{ color: '#fff', fontSize: 16 }}>{msg.text}</Text>
                                 )}
@@ -216,32 +338,32 @@ const ChatScreen: React.FC = () => {
         // A resposta já chega formatada como objeto JSON ou array de objetos
         if (Array.isArray(resposta)) {
             resposta.forEach((item) => {
-            if (item.tipo === 'dado_financeiro') {
-                setMessages((msgs) => [...msgs, { userId: 'bot', ...item }]);
-            } else {
-                setMessages((msgs) => [...msgs, { userId: 'bot', text: item.resposta || item.text || 'Erro ao obter resposta.' }]);
-            }
+                if (item.tipo === 'dado_financeiro') {
+                    setMessages((msgs) => [...msgs, { userId: 'bot', ...item }]);
+                } else {
+                    setMessages((msgs) => [...msgs, { userId: 'bot', text: item.resposta || item.text || 'Erro ao obter resposta.' }]);
+                }
             });
         } else {
             const respostaObj = resposta;
             if (respostaObj.tipo === 'dado_financeiro') {
-            setMessages((msgs) => [...msgs, { userId: 'bot', ...respostaObj }]);
+                setMessages((msgs) => [...msgs, { userId: 'bot', ...respostaObj }]);
             } else {
-            // Garante que respostaObj.resposta seja string
-            let texto = respostaObj.resposta || respostaObj.text || 'Erro ao obter resposta.';
-            if (typeof texto !== 'string') {
-                try {
-                texto = JSON.stringify(texto, null, 2);
-                } catch {
-                texto = 'Erro ao processar resposta do assistente.';
+                // Garante que respostaObj.resposta seja string
+                let texto = respostaObj.resposta || respostaObj.text || 'Erro ao obter resposta.';
+                if (typeof texto !== 'string') {
+                    try {
+                        texto = JSON.stringify(texto, null, 2);
+                    } catch {
+                        texto = 'Erro ao processar resposta do assistente.';
+                    }
                 }
-            }
-            // Remove aspas duplas extras e quebras de linha do início/fim, mesmo com espaços/quebras de linha
-            if (typeof texto === 'string') {
-                texto = texto.trim();
-                texto = texto.replace(/^["\s\n]+|["\s\n]+$/g, '');
-            }
-            setMessages((msgs) => [...msgs, { userId: 'bot', text: texto }]);
+                // Remove aspas duplas extras e quebras de linha do início/fim, mesmo com espaços/quebras de linha
+                if (typeof texto === 'string') {
+                    texto = texto.trim();
+                    texto = texto.replace(/^\["\s\n]+|["\s\n]+$/g, '');
+                }
+                setMessages((msgs) => [...msgs, { userId: 'bot', text: texto }]);
             }
         }
                 } catch (e) {
@@ -273,8 +395,9 @@ const ChatScreen: React.FC = () => {
 			style={{ flex: 1 }}
 			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 			keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : insets.top + 45}
+            
 		>
-			<View style={{ flex: 1}}>
+			<View style={{ flex: 1 }}>
                 <FlatList
                     ref={flatListRef}
                     data={[]}
@@ -285,7 +408,7 @@ const ChatScreen: React.FC = () => {
                     keyboardShouldPersistTaps="handled"
                     ListHeaderComponent={<MessageList messages={messages} userId={userId ?? ''} />}
                 />
-				<View style={{ paddingBottom: insets.bottom, backgroundColor: THEME.light.background }}>
+				<View style={{ paddingBottom: insets.bottom}}>
 					<ChatInput loading={loading} onSend={handleSend} />
 				</View>
 			</View>

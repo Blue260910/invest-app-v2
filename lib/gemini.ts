@@ -238,41 +238,77 @@ export async function sendMessage(userId: string, mensagem: string) {
     return { tipo: "mensagem", resposta: texto };
   }
 
-  // Após extrair o JSON, se for dado_financeiro, busca os dados reais
+  // Após extrair o JSON, se for dado_financeiro, busca os dados reais e o histórico
   async function enrichWithRealQuotes(respostaGemini: any): Promise<any> {
+    // Função auxiliar para extrair valor, data e variação do histórico
+    function getDataFromHistorico(historico: any): { valor?: string, data?: string, variacao_dia?: string } {
+      let candles = null;
+      if (historico && Array.isArray(historico)) {
+        candles = historico;
+      } else if (historico && typeof historico === 'object' && historico !== null && Array.isArray(historico.candles)) {
+        candles = historico.candles;
+      }
+      if (candles && candles.length > 0) {
+        const last = candles[candles.length - 1];
+        const prev = candles.length > 1 ? candles[candles.length - 2] : null;
+        const valor = last && typeof last.close === 'number' ? `R$ ${last.close.toFixed(2)}` : undefined;
+        const data = last && last.date ? new Date(last.date).toLocaleDateString('pt-BR') : undefined;
+        let variacao_dia;
+        if (last && prev && typeof last.close === 'number' && typeof prev.close === 'number') {
+          const diff = last.close - prev.close;
+          const perc = (diff / prev.close) * 100;
+          variacao_dia = `${diff >= 0 ? '+' : ''}${perc.toFixed(2)}%`;
+        }
+        return { valor, data, variacao_dia };
+      }
+      return {};
+    }
+
     if (Array.isArray(respostaGemini)) {
       return await Promise.all(respostaGemini.map(async (item) => {
         if (item.tipo === "dado_financeiro" && item.codigo) {
           const real = await fetchStockQuote(item.codigo);
-          if (real) {
-            return { ...item, ...real };
+          let historico = await fetchDataHistoricChart(item.codigo);
+          let fallback = {};
+          if (!real) {
+            fallback = getDataFromHistorico(historico);
           }
+          return { ...item, ...(real || {}), ...fallback, historico };
         }
         return item;
       }));
     } else if (respostaGemini && respostaGemini.tipo === "dado_financeiro" && respostaGemini.codigo) {
       const real = await fetchStockQuote(respostaGemini.codigo);
-      if (real) {
-        return { ...respostaGemini, ...real };
+      let historico = await fetchDataHistoricChart(respostaGemini.codigo);
+      console.log("Dados reais obtidos:", real);
+      console.log("Histórico obtido:", historico);
+      let fallback = {};
+      if (!real) {
+        fallback = getDataFromHistorico(historico);
       }
+      return { ...respostaGemini, ...(real || {}), ...fallback, historico };
     }
     return respostaGemini;
   }
 
   async function fetchDataHistoricChart(symbol: string) {
-    const baseUrl = `https://oziwendirtmqquvqkree.supabase.co/functions/v1/fetch-stock-history`;
-    const response = await fetch(baseUrl, {
+    const url = `https://oziwendirtmqquvqkree.supabase.co/functions/v1/fetch-stock-history?symbol=${encodeURIComponent(symbol)}`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aXdlbmRpcnRtcXF1dnFrcmVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwOTA4MzksImV4cCI6MjA2MjY2NjgzOX0.PjysWhT8Y32PldsP3OsAefhiKfxjF8naRDhrrSddRVQ'
-      },
-      body: JSON.stringify({ symbol })
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aXdlbmRpcnRtcXF1dnFrcmVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwOTA4MzksImV4cCI6MjA2MjY2NjgzOX0.PjysWhT8Y32PldsP3OsAefhiKfxjF8naRDhrrSddRVQ',
+        'content-Type': 'application/json'
+      }
     });
     const data = await response.json();
     return data;
   }
 
+  console.log("Extraindo JSON da resposta...");
+
   const respostaGemini = extrairJson(respostaTexto);
+  console.log("JSON extraído:", respostaGemini.codigo);
+
+  // O enrichWithRealQuotes agora já inclui o histórico no retorno
   return await enrichWithRealQuotes(respostaGemini);
 }
