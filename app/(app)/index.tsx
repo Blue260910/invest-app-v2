@@ -6,15 +6,18 @@ import { SectionCards } from '@/components/section-cards';
 import { Input } from '@/components/ui/input';
 import { Separator } from 'components/ui/separator';
 import { THEME } from '@/lib/theme';
+import { useFormContext } from '../../contexts/FormContext';
+import { useEffect } from 'react';
 
 
 export default function Dashboard() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = THEME[colorScheme ?? 'light'];
-  // Mock de dados
-  const saldo = 12500.75;
-  const desempenho = 8.2; // %
+  const { recuperarDados } = useFormContext();
+  useEffect(() => {
+    if (recuperarDados) recuperarDados();
+  }, []);
   return (
     <View className="p-4">
       <SectionCards />

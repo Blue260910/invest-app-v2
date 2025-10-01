@@ -129,6 +129,9 @@ export function SignInForm() {
                 <Input
                   ref={passwordInputRef}
                   id="password"
+                  placeholder="••••••••"
+                  autoComplete="password"
+                  autoCapitalize="none"
                   secureTextEntry
                   returnKeyType="send"
                   onSubmitEditing={onSubmit}
