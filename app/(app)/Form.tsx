@@ -213,7 +213,7 @@ export default function MultiStepForm() {
             {step === 5 &&(<CardTitle className="text-center text-xl">Termos e Consentimentos</CardTitle>)}
             {step === 6 &&(<CardTitle className="text-center text-xl">Resumo e Confirmação</CardTitle>)}
           </CardHeader>
-          <CardContent className="gap-6 bg-fuchsia-500 flex">
+          <CardContent className="gap-6 flex">
             {step !== 6 ? (
               <ScrollView showsVerticalScrollIndicator={false} className="flex" contentContainerStyle={{paddingBottom: 24}}>
                 {step === 1 && (
