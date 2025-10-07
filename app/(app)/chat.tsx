@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMensagemInicial } from '../../contexts/MensagemInicialContext';
-import { View, Text, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, useColorScheme  } from 'react-native';
+import { View, Text, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, useColorScheme, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
+import { Clipboard } from 'react-native';
+import { AudioLines, Copy, BotMessageSquare} from 'lucide-react-native';
+// import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatInput } from '@/components/ChatInput';
 import { useFormContext } from '../../contexts/FormContext';
@@ -12,6 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { useFont, Circle, Text as SkiaText } from '@shopify/react-native-skia';
+import { useAuth } from '@/contexts/AuthContext';
+
+
 
 import type { SharedValue } from "react-native-reanimated";
 
@@ -43,6 +51,11 @@ const ChatScreen: React.FC = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mensagemInicial]);
+
+    const { user } = useAuth();
+    const avatarUser = user?.user_metadata?.avatar_url || 'https://images.pexels.com/photos/1270076/pexels-photo-1270076.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
+
+
 
 	const [loading, setLoading] = useState(false);
 	const flatListRef = useRef<FlatList>(null);
@@ -165,37 +178,67 @@ const ChatScreen: React.FC = () => {
 
             // Define a cor da linha: preta no claro, branca no escuro
             const lineColor = colorScheme === 'dark' ? '#fff' : '#000';
+            // Consistência visual: fundo, bordas, sombra, padding igual à mensagem do bot
+            const botBgColor = colorScheme === 'light' ? 'hsl(0 0% 98%)' : 'hsl(0 0% 9%)';
+            const botTextColor = colorScheme === 'dark' ? '#fff' : '#222';
             return (
-                <Card className="w-4/5" style={{ backgroundColor: theme.primaryForeground }}>
-                    <CardHeader className="flex-row justify-between items-center">
-                        <CardTitle style={{ marginBottom: 0, flexShrink: 1 }}>{data.titulo}</CardTitle>
-                        <Badge variant="secondary" className="ml-2 px-2 py-1">
-                            <UIText className="text-xs font-mono tracking-wider">{data.codigo}</UIText>
-                        </Badge>
-                    </CardHeader>
-                    <Separator />
-                    {/* Só mostra o gráfico se não houver erro e houver candles reais OU mock */}
-                    {(!historicoErro && graficoData.length > 0) && (
-                        <View style={{ position: "relative" }} className='height-50'>
-                            <View style={{ position: "absolute", bottom: 5, right: 0, zIndex: 1 }}>
-                                <Badge variant="secondary">
-                                    <UIText>
-                                        {(isActive || fixedTooltip)
-                                            ? `${
-                                                isActive
-                                                    ? `${state.x.value.value}  |  R$: ${!isNaN(state.y.close.value.value) ? state.y.close.value.value.toFixed(2) : ''}`
-                                                    : `${fixedTooltip?.date}  |  R$: ${fixedTooltip?.value?.toFixed(2)}`
-                                            }`
-                                            : "Variação dos últimos 15 dias"}
-                                    </UIText>
-                                    {fixedTooltip && (
-                                        <UIText onPress={clearTooltip} style={{ color: 'red', marginLeft: 8 }}>✕</UIText>
-                                    )}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginVertical: 4 }}>
+                    {/* Avatar do bot */}
+                    <View style={{ marginHorizontal: 6 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' }}>
+                            <BotMessageSquare color={'#fff'} size={20} />
+                        </View>
+                    </View>
+                    {/* Card do gráfico */}
+                    <View
+                        style={{
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            borderBottomLeftRadius: 4,
+                            borderBottomRightRadius: 24,
+                            padding: 12,
+                            maxWidth: '80%',
+                            width: '80%',
+                            height: historicoErro ? undefined : 300,
+                            backgroundColor: botBgColor,
+                            borderWidth: 0,
+                            borderColor: 'transparent',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 4,
+                            elevation: 3,
+                        }}
+                    >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 4 }}>
+                            <Text style={{ fontWeight: 'bold', fontSize: 16, color: botTextColor, flexShrink: 1 }}>{data.titulo}</Text>
+                            <View style={{ marginLeft: 8 }}>
+                                <Badge variant="secondary" className="px-2 py-1">
+                                    <UIText className="text-xs font-mono tracking-wider">{data.codigo}</UIText>
                                 </Badge>
                             </View>
-                            <CardContent className="h-40 mb-5">
-                                <View
-                                    style={{ flex: 1 }}
+                        </View>
+                        <Separator />
+                        {/* Só mostra o gráfico se não houver erro e houver candles reais OU mock */}
+                        {(!historicoErro && graficoData.length > 0) && (
+                            <View style={{ position: "relative", height: 160, marginBottom: 8 }}>
+                                <View style={{ position: "absolute", bottom: 5, right: 0, zIndex: 1 }}>
+                                    <Badge variant="secondary">
+                                        <UIText>
+                                            {(isActive || fixedTooltip)
+                                                ? `${
+                                                    isActive
+                                                        ? `${state.x.value.value}  |  R$: ${!isNaN(state.y.close.value.value) ? state.y.close.value.value.toFixed(2) : ''}`
+                                                        : `${fixedTooltip?.date}  |  R$: ${fixedTooltip?.value?.toFixed(2)}`
+                                                }`
+                                                : "Variação dos últimos 15 dias"}
+                                        </UIText>
+                                        {fixedTooltip && (
+                                            <UIText onPress={clearTooltip} style={{ color: 'red', marginLeft: 8 }}>✕</UIText>
+                                        )}
+                                    </Badge>
+                                </View>
+                                <View  className="flex-1 mb-2"
                                     // Ao pressionar fora do gráfico, limpa o tooltip
                                     onStartShouldSetResponder={() => {
                                         clearTooltip();
@@ -224,24 +267,33 @@ const ChatScreen: React.FC = () => {
                                         )}
                                     </CartesianChart>
                                 </View>
-                            </CardContent>
-                            <Separator />
+                                <Separator />
+                            </View>
+                        )}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
+                            <View>
+                                <UIText className="text-2xl font-bold leading-tight" style={{ color: botTextColor }}>{data.valor}</UIText>
+                                <Badge variant="outline" className="mt-1 px-2 py-1">
+                                    <UIText
+                                        style={{
+                                            color: isPositive
+                                                ? '#16a34a' // verde
+                                                : isNegative
+                                                    ? '#dc2626' // vermelho
+                                                    : botTextColor
+                                        }}
+                                    >
+                                        {data.variacao_dia ?? '--'} Hoje
+                                    </UIText>
+                                </Badge>
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                                <UIText className="text-[10px] text-muted-foreground" style={{ color: botTextColor }}>Fonte: {data.fonte}</UIText>
+                                <UIText className="text-[10px] text-muted-foreground" style={{ color: botTextColor }}>{data.data}</UIText>
+                            </View>
                         </View>
-                    )}
-                    <CardFooter className="flex-row items-end justify-between">
-                        <View>
-                            <UIText className="text-2xl font-bold leading-tight">{data.valor}</UIText>
-                            <Badge variant="outline" className="mt-1 px-2 py-1">
-                                <UIText >{data.variacao_dia ?? '--'} Hoje</UIText>
-                            </Badge>
-                        </View>
-                        <View style={{ alignItems: 'flex-end' }}>
-                            <UIText className="text-[10px] text-muted-foreground">Fonte: {data.fonte}</UIText>
-                            <UIText className="text-[10px] text-muted-foreground">{data.data}</UIText>
-                        </View>
-
-                    </CardFooter>
-                </Card>
+                    </View>
+                </View>
             );
         }
 
@@ -259,30 +311,94 @@ const ChatScreen: React.FC = () => {
                     if (msg.userId === 'bot' && msg.tipo === 'dado_financeiro') {
                         return (
                             <View key={idx} style={{ alignItems: 'flex-start', marginVertical: 4 }}>
-                                {/* Passa o histórico real se vier junto na mensagem */}
                                 <FinancialDataCard data={msg} />
                             </View>
                         );
                     }
                     // Mensagem comum
                     return (
-                        <View key={idx} style={{ alignItems: isUser ? 'flex-end' : 'flex-start', marginVertical: 8 }}>
-                            <View
-                                style={{
-                                    borderRadius: 16,
-                                    padding: 10,
-                                    maxWidth: '90%',
-                                    backgroundColor: isUser ? '#2563eb' : botBgColor, // azul para user, tema para bot
-                                    borderWidth: isUser ? 1 : 0,
-                                    borderColor: isUser ? '#1d4ed8' : 'transparent',
-                                }}
-                            >
-                                {msg.userId === 'bot' ? (
-                                    <Markdown style={{ body: { color: botTextColor, fontSize: 16 } }}>{msg.text}</Markdown>
+                        <View key={idx} style={{ flexDirection: isUser ? 'row-reverse' : 'row', alignItems: 'flex-end', marginVertical: 8 }}>
+                            {/* Avatar */}
+                            <View style={{ marginHorizontal: 6 }}>
+                                {isUser ? (
+                                    avatarUser ? (
+                                        <Image
+                                            source={{ uri: avatarUser }}
+                                            style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#2563eb' }}
+                                        />
+                                    ) : (
+                                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#2563eb', justifyContent: 'center', alignItems: 'center' }}>
+                                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{userId?.charAt(0).toUpperCase() ?? 'U'}</Text>
+                                        </View>
+                                    )
                                 ) : (
-                                    <Text style={{ color: '#fff', fontSize: 16 }}>{msg.text}</Text>
+                                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' }}>
+                                        <BotMessageSquare color={'#fff'} size={20} />
+                                    </View>
                                 )}
                             </View>
+                            {/* Bolha de mensagem */}
+                            {isUser ? (
+                                <LinearGradient
+                                    colors={["#2563eb", "#1e40af"]}
+                                    start={[0, 0]}
+                                    end={[1, 1]}
+                                    style={{
+                                        borderTopLeftRadius: 24,
+                                        borderTopRightRadius: 24,
+                                        borderBottomLeftRadius: 24,
+                                        borderBottomRightRadius: 4,
+                                        padding: 12,
+                                        maxWidth: '80%',
+                                        borderWidth: 1,
+                                        borderColor: '#1d4ed8',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.15,
+                                        shadowRadius: 4,
+                                        elevation: 3,
+                                    }}
+                                >
+                                    <Text style={{ color: '#fff', fontSize: 16 }}>{msg.text}</Text>
+                                </LinearGradient>
+                            ) : (
+                                <View
+                                    style={{
+                                        borderTopLeftRadius: 24,
+                                        borderTopRightRadius: 24,
+                                        borderBottomLeftRadius: 4,
+                                        borderBottomRightRadius: 24,
+                                        padding: 12,
+                                        maxWidth: '80%',
+                                        backgroundColor: botBgColor,
+                                        borderWidth: 0,
+                                        borderColor: 'transparent',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.15,
+                                        shadowRadius: 4,
+                                        elevation: 3,
+                                    }}
+                                >
+                                    <Markdown style={{ body: { color: botTextColor, fontSize: 16 } }}>{msg.text}</Markdown>
+                                    <View className='flex-col items-center mt-2'>
+                                        <Separator />
+                                        <View className='flex-row w-full mt-3 ml-3'>
+                                            <Copy
+                                                size={20}
+                                                color={botTextColor}
+                                                style={{ marginRight: 12 }}
+                                                onPress={() => Clipboard.setString(msg.text)}
+                                            />
+                                            <AudioLines
+                                                size={22}
+                                                color={botTextColor}
+                                                onPress={() => Speech.speak(msg.text, { language: 'pt-BR' })}
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
                         </View>
                     );
                 })}
@@ -390,30 +506,31 @@ const ChatScreen: React.FC = () => {
 		}
 	}, [messages]);
 
-	return (
-		<KeyboardAvoidingView
-			style={{ flex: 1 }}
-			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : insets.top + 45}
-            
-		>
-			<View style={{ flex: 1 }}>
-                <FlatList
-                    ref={flatListRef}
-                    data={[]}
-                    keyExtractor={() => ''}
-                    renderItem={() => null}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    ListHeaderComponent={<MessageList messages={messages} userId={userId ?? ''} />}
-                />
-				<View style={{ paddingBottom: insets.bottom}}>
-					<ChatInput loading={loading} onSend={handleSend} />
-				</View>
-			</View>
-		</KeyboardAvoidingView>
-	);
+    return (
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : insets.top + 45}
+            >
+                <View style={{ flex: 1 }}>
+                    <FlatList
+                        ref={flatListRef}
+                        data={[]}
+                        keyExtractor={() => ''}
+                        renderItem={() => null}
+                        contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        ListHeaderComponent={<MessageList messages={messages} userId={userId ?? ''} />}
+                    />
+                    <View>
+                        <ChatInput loading={loading} onSend={handleSend} />
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </View>
+    );
 };
 
 export default ChatScreen;
