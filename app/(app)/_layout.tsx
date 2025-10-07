@@ -30,6 +30,7 @@ import ProfileScreen from '@/app/(app)/profile';
 import SummaryScreen from '@/app/(app)/summary';
 import MultiStepForm from '@/app/(app)/Form';
 import ChatScreen from '@/app/(app)/chat';
+import DiverificadorScreen from '@/app/(app)/diversificador';
 // import FormPersonal from '@/app/(app)/form/personal';
 // import FormFinancial from '@/app/(app)/form/financial';
 // import Forminvestor from '@/app/(app)/form/investor';
@@ -83,6 +84,14 @@ const AppLayout = () => {
           options={{
             drawerLabel: 'Início',
               drawerIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
+          }}
+        />
+        <Drawer.Screen
+          name="Diversificador"
+          component={DiverificadorScreen}
+          options={{
+            drawerLabel: 'Diversificador',
+              drawerIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
           }}
         />
         <Drawer.Screen
