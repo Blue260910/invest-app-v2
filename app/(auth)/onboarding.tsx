@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from 'components/ui/separator';
 import { StarIcon } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, Image } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -60,7 +60,20 @@ const logos = [
 export default function OnboardingHero() {
   const router = useRouter();
   return (
-    <View className="flex flex-col gap-16 px-8 py-24 text-center">
+    <View className="flex flex-col gap-16 px-8 py-24 text-center relative">
+                  <Image
+                    source={require('@/assets/images/OnboardingFundo.png')}
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      width: '130%',
+                      height: '130%',
+                      resizeMode: 'cover',
+                      opacity: 0.6,
+                      zIndex: 0,
+                    }}
+                  />
       <View className="flex flex-col items-center justify-center gap-8">
         <Text>
           <Announcement className="mb-0 px-5" themed>
