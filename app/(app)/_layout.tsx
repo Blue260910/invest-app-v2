@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   User as UserIcon,
   User,
+  ChartPie
 } from 'lucide-react-native';
 import { FormProvider } from '@/contexts/FormContext';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
@@ -91,7 +92,7 @@ const AppLayout = () => {
           component={DiverificadorScreen}
           options={{
             drawerLabel: 'Diversificador',
-              drawerIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <ChartPie color={color} size={size} />,
           }}
         />
         <Drawer.Screen
