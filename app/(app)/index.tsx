@@ -11,6 +11,10 @@ import { useFormContext } from '../../contexts/FormContext';
 import { useEffect, useState } from 'react';
 import { useMensagemInicial } from '../../contexts/MensagemInicialContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
+import {useAlertPollingRealtime} from '@/contexts/NotificationContext';
+
+
 
 
 export default function Dashboard() {
@@ -24,7 +28,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const avatar = user?.user_metadata?.avatar_url || 'https://images.pexels.com/photos/1270076/pexels-photo-1270076.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
   const username = user?.user_metadata?.first_name || 'Usuário';
-  
+
+  useAlertPollingRealtime();
 
   // Mock data
   const cards = [

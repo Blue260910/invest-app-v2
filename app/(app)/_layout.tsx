@@ -82,7 +82,7 @@ const AppLayout = () => {
           component={HomeScreen}
           options={{
             drawerLabel: 'Início',
-            drawerIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
           }}
         />
         <Drawer.Screen
@@ -90,7 +90,7 @@ const AppLayout = () => {
           component={SummaryScreen}
           options={{
             drawerLabel: 'Sumário',
-            drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
           }}
         />
         <Drawer.Screen
@@ -98,7 +98,7 @@ const AppLayout = () => {
           component={MultiStepForm}
           options={{
             drawerLabel: 'Formulário',
-            drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <CheckCheck color={color} size={size} />,
           }}
         />
         <Drawer.Screen
@@ -106,7 +106,7 @@ const AppLayout = () => {
           component={ChatScreen}
           options={{
             drawerLabel: 'Chat',
-            drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <BotMessageSquare color={color} size={size} />,
           }}
         />
         <Drawer.Screen
@@ -114,7 +114,7 @@ const AppLayout = () => {
           component={ProfileScreen}
           options={{
             drawerLabel: 'Perfil',
-            drawerIcon: ({ color, size }) => <UserIcon color={color} size={size} />,
+              drawerIcon: ({ color, size }) => <User color={color} size={size} />,
           }}
         />
       </Drawer.Navigator>
