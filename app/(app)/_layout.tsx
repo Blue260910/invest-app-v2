@@ -32,6 +32,8 @@ import SummaryScreen from '@/app/(app)/summary';
 import MultiStepForm from '@/app/(app)/Form';
 import ChatScreen from '@/app/(app)/chat';
 import DiverificadorScreen from '@/app/(app)/diversificador';
+import {useAlertPollingRealtime} from '@/contexts/NotificationContext';
+
 // import FormPersonal from '@/app/(app)/form/personal';
 // import FormFinancial from '@/app/(app)/form/financial';
 // import Forminvestor from '@/app/(app)/form/investor';
@@ -42,6 +44,8 @@ import DiverificadorScreen from '@/app/(app)/diversificador';
 // import Diverificador from './diverificador';
 
 const Drawer = createDrawerNavigator();
+
+useAlertPollingRealtime();
 
 function ThemeToggleDrawer() {
   const { colorScheme, toggleColorScheme } = useColorScheme();

@@ -9,14 +9,14 @@ import { useEffect, useState } from 'react';
 import { Edit2, User as UserIcon, AtSign, Clock, Shield } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { ScrollView } from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native';
 
 // InfoItem component for displaying label-value pairs with an icon
 // Usa componentes UI para exibir informações
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <View className="flex-row items-center mb-2">
-            <View className="mr-2">{icon}</View>
+            <View className="mr-5">{icon}</View>
             <View>
                 <Text className="font-medium">{label}:</Text>
                 <Text className="text-muted-foreground">{value}</Text>
@@ -80,8 +80,8 @@ export default function ProfileScreen() {
         return (
             <SafeAreaView className="flex-1 bg-background">
                 <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-                    <View className="items-center mb-6">
-                        <Avatar alt={username + "'s Avatar"}>
+                    <View className=" justify-around mb-6 flex-row ">
+                        <Avatar  className="h-16 w-16" alt={username + "'s Avatar"}>
                             <AvatarImage source={{ uri: avatar }} />
                             <AvatarFallback>
                                 {typeof username === 'string' ? (
@@ -93,18 +93,16 @@ export default function ProfileScreen() {
                                 )}
                             </AvatarFallback>
                         </Avatar>
-                        <Button variant="ghost" className="mt-2 flex-row items-center gap-2" onPress={() => {/* TODO: Editar avatar */}}>
-                            <Edit2 size={18} />
-                            <Text>Editar foto</Text>
-                        </Button>
-                        <Text className="text-xl font-bold mt-2">{username}</Text>
-                        <Text className="text-base text-muted-foreground mt-1">{email}</Text>
+                        <View>
+                            <Text className="text-xl font-bold mt-2">{username}</Text>
+                            <Text className="text-base text-muted-foreground mt-1">{email}</Text>
+                        </View>
                     </View>
                     <Card className="w-full max-w-md self-center">
                         <CardHeader>
                             <CardTitle className="text-lg">Informações da Conta</CardTitle>
                         </CardHeader>
-                        <Separator className="my-2" />
+                        <Separator/>
                         <CardContent className="gap-2">
                             <InfoItem icon={<UserIcon size={20} color="#6366F1" />} label="Nome de usuário" value={username} />
                             <InfoItem icon={<AtSign size={20} color="#6366F1" />} label="E-mail" value={email} />
@@ -118,14 +116,6 @@ export default function ProfileScreen() {
                             <InfoItem icon={<Shield size={20} color="#6366F1" />} label="Status da conta" value="Ativa" />
                         </CardContent>
                     </Card>
-                    <View className="mt-8 gap-4 w-full max-w-md self-center">
-                        <Button className="w-full" variant="outline" onPress={() => {/* TODO: Navegar para edição de perfil */}}>
-                            <Text>Editar perfil</Text>
-                        </Button>
-                        <Button className="w-full" variant="destructive" onPress={() => {/* TODO: Sair */}}>
-                            <Text>Sair</Text>
-                        </Button>
-                    </View>
                 </ScrollView>
             </SafeAreaView>
         );

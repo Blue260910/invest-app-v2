@@ -2,17 +2,14 @@ import { useNavigation } from '@react-navigation/native';
 import { Button } from 'components/ui/button';
 import { View, useColorScheme, Image, ScrollView, StyleSheet } from 'react-native';
 import { Brain, EyeIcon, EyeClosedIcon } from 'lucide-react-native';
-import { SectionCards } from '@/components/section-cards';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { Separator } from 'components/ui/separator';
 import { THEME } from '@/lib/theme';
 import { useFormContext } from '../../contexts/FormContext';
 import { useEffect, useState } from 'react';
 import { useMensagemInicial } from '../../contexts/MensagemInicialContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNotification } from '@/contexts/NotificationContext';
-import {useAlertPollingRealtime} from '@/contexts/NotificationContext';
+import { UserMenu } from '@/components/user-menu';
 
 
 
@@ -29,7 +26,7 @@ export default function Dashboard() {
   const avatar = user?.user_metadata?.avatar_url || 'https://images.pexels.com/photos/1270076/pexels-photo-1270076.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
   const username = user?.user_metadata?.first_name || 'Usuário';
 
-  useAlertPollingRealtime();
+  
 
   // Mock data
   const cards = [

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel, ChatSession } from "@google/generative-ai";
 
-const GEMINI_API_KEY = "AIzaSyAI5jIBs2aPgFOwXoSKtrWqXsY1EE67bS4";
+const GEMINI_API_KEY = "AIzaSyBAko78utInSIp8lV-B9Mw7dzzVRZqtlxk";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const GENERATION_CONFIG = {
