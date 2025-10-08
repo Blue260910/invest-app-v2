@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { THEME } from '@/lib/theme';
 import { Pie, PolarChart } from 'victory-native';
 import { Car } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
 
 
 const data = {
@@ -30,6 +31,7 @@ const data = {
 export default function DiversificadorScreen() {
   const [acoesSelecionadas, setAcoesSelecionadas] = React.useState<string[]>([]);
   const [analise, setAnalise] = React.useState<any | null>(null);
+  const [HTMLGraph, setHTMLGraph] = React.useState<string | null>(null);
   const colorScheme = useColorScheme() as 'light' | 'dark' | null;
   const theme = THEME[(colorScheme ?? 'light') as 'light' | 'dark'];
   
@@ -91,17 +93,36 @@ export default function DiversificadorScreen() {
         {Object.entries(analise).map(([perfil, dados]: any, idxPerfil) => {
           // Monta dados para o gráfico
             const azulTons = [
-            '#60a5fa', // azul claro
-            '#2563eb', // azul médio
-            '#1e40af', // azul escuro
-            '#3b82f6', // azul padrão
-            '#0ea5e9', // azul ciano
-            '#38bdf8', // azul celeste
+              '#60a5fa', // azul claro
+              '#2563eb', // azul médio
+              '#1e40af', // azul escuro
+              '#3b82f6', // azul padrão
+              '#0ea5e9', // azul ciano
+              '#38bdf8', // azul celeste
+            ];
+            const amareloTons = [
+              '#fde047', // amarelo claro
+              '#facc15', // amarelo padrão
+              '#eab308', // amarelo escuro
+              '#fef08a', // amarelo pastel
+              '#fcd34d', // amarelo dourado
+              '#fbbf24', // amarelo vibrante
+            ];
+            const laranjaTons = [
+              '#fb923c', // laranja claro
+              '#f97316', // laranja padrão
+              '#ea580c', // laranja escuro
+              '#fdba74', // laranja pastel
+              '#fca311', // laranja vibrante
+              '#ff8800', // laranja forte
             ];
             const pieData = Object.entries(dados.Pesos).map(([ticker, peso], idx) => ({
             label: ticker,
             value: Number(peso) * 100,
-            color: azulTons[idx % azulTons.length],
+            color: (perfil === 'Conservador' ? azulTons[idx % azulTons.length] :
+                    perfil === 'Moderado' ? amareloTons[idx % amareloTons.length] :
+                    perfil === 'Arriscado' ? laranjaTons[idx % laranjaTons.length] :
+                    cores[idx % cores.length])
             }));
           return (
             <Card style={{ width: 300}} key={perfil} className="mb-4 mx-2">
@@ -146,8 +167,8 @@ export default function DiversificadorScreen() {
                     ))}
                   </View>
                 </CardHeader>
-                <View style={{ height: 220, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 180, height: 180 }}>
+                <View className='mt-10' style={{alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 250, height: 250 }}>
                     <PolarChart
                       data={pieData}
                       labelKey="label"
@@ -162,6 +183,27 @@ export default function DiversificadorScreen() {
             </Card>
           );
         })}
+        <Card style={{ width: 300}} className="mb-4 mx-2">
+          <View className='w-full'>
+            <CardHeader>
+              <CardTitle className='mb-1'>
+                <Text>Gráfico Detalhado</Text>
+              </CardTitle>
+            </CardHeader>
+            <Separator />
+            <View style={{ height: 500, padding: 0 }}>
+            {HTMLGraph ? (
+              <WebView
+                originWhitelist={['*']}
+                source={{ html: HTMLGraph }}
+                style={{ flex: 1 }}
+              />
+            ) : (
+              <Text>Nenhum gráfico disponível</Text>
+            )}
+            </View>
+          </View>
+        </Card>
       </ScrollView>
     );
   }
@@ -174,40 +216,11 @@ export default function DiversificadorScreen() {
         const tickers = acoesSelecionadas.map(t => t + '.SA').join('%2C');
         try {
           const res = await fetch(`https://api-diversificacao.onrender.com/analise?tickers=${tickers}`);
-            // MOCK: simula resposta da API
-            // const res = {
-            // json: async () => ({
-            //   "Conservador": {
-            //   "Retorno": 0.123,
-            //   "Risco": 0.2566,
-            //   "Pesos": {
-            //     "ITSA4.SA": 0.6924,
-            //     "PETR4.SA": 0.043,
-            //     "VALE3.SA": 0.2645
-            //   }
-            //   },
-            //   "Moderado": {
-            //   "Retorno": 0.1961,
-            //   "Risco": 0.288,
-            //   "Pesos": {
-            //     "ITSA4.SA": 0.3665,
-            //     "PETR4.SA": 0.3709,
-            //     "VALE3.SA": 0.2626
-            //   }
-            //   },
-            //   "Arriscado": {
-            //   "Retorno": 0.3116,
-            //   "Risco": 0.4151,
-            //   "Pesos": {
-            //     "ITSA4.SA": 0.0266,
-            //     "PETR4.SA": 0.9501,
-            //     "VALE3.SA": 0.0232
-            //   }
-            //   }
-            // })
-            // };
           const json = await res.json();
           setAnalise(json);
+
+          const html = await fetch(`https://api-diversificacao.onrender.com/grafico`);
+          setHTMLGraph(await html.text());
         } catch (e) {
           setAnalise(null);
         }
@@ -331,7 +344,7 @@ export default function DiversificadorScreen() {
           {data.recent.map((item, idx) => (
             <View key={idx} className="flex-row items-center justify-between py-2">
               <View className="flex-row items-center gap-3">
-                <Avatar alt={item.name}>
+                <Avatar alt={item.name} className="bg-muted justify-center items-center">
                   <Text>{item.name[0]}</Text>
                 </Avatar>
                 <View>
